@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 
 
-GFICLEE_VERSION = 'v23.37.0'
+GFICLEE_VERSION = '23.45.0'
 
 setup(
     name='kiwigo',
@@ -19,12 +19,11 @@ setup(
         # "console_scripts": ['cfastproject = fastproject.main:main']
     },
     install_requires=[
-        "configparser", "inspect",
-        "eml_parser", "base64", "re", "pandas", "docx", "comtypes", "fitz"
+        # "configparser", "eml_parser", "pandas", "docx", "PyMuPDF", "fitz"
     ],
-    # url='https://github.com/',
+    url='https://github.com/gh-hty/kiwigo_box.git',
     # license='GNU General Public License v3.0',
     author='tyhua',
     author_email='hua.x64@outlook.com',
-    description='For daily work of cob.'
+    description='For daily work.'
 )

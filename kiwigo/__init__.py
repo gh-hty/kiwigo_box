@@ -11,21 +11,26 @@ import os
 #
 # print(os.path.abspath(_pth_ini_))
 
-
-
-
 from .toolman import Toolman
-from .tooler_docx import Af
 from .tooler_eml import Sq
+from .easter_egg import CityLights
+from .self_funs import SelfFuns
+
 
 tm = Toolman()
+dct_ini = tm._rd_ini()
+# _rd_ini = _rd_ini
 init_dir = tm.init_dir
-
-af = Af()
-# doxs_to_xlx = af.doxs_to_xlx
+tst = tm.tst
 
 sq = Sq()
+fix_sqd = sq.fix_sqd
 doxs_to_xlx = sq.doxs_to_xlx
 emls_to_doxs = sq.emls_to_doxs
 
+sf = SelfFuns()
+open_dir = sf.open_dir
+
+cl = CityLights()
+you = cl.you
 

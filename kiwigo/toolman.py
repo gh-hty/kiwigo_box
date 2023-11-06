@@ -8,10 +8,13 @@ import configparser
 
 class Toolman():
     def __init__(self):
-        print()
+        pass
+
+    def tst(self, p):
+        print(p)
 
     # 删除多出的output目录
-    def __cls_otpth(self, _dir_run_py, _hd_dir_ot, bf_mx=2):
+    def __cls_otpth(self, _dir_run_py, _hd_dir_ot, bf_mx=3):
         lst_pyout = []
         for _dir in os.listdir(_dir_run_py):
             if os.path.isdir(_dir) and _hd_dir_ot in _dir:
@@ -34,32 +37,37 @@ class Toolman():
     def _rd_ini(self, ):
         dct_ini = {}
         dct_ini['_dir_run_py_'] = os.getcwd()
-        print('_dir_run_py_', dct_ini['_dir_run_py_'])
+        # print('_dir_run_py_', dct_ini['_dir_run_py_'])
 
         # 1. 读取.ini文件
         _dir_me_ = os.path.dirname(os.path.realpath(__file__))
-        _rpth_ini_ = './heya.ini'
-        os.chdir(_dir_me_)
+        _rpth_ini_ = './kiwigo.ini'
+        os.chdir(dct_ini['_dir_run_py_'])
         _pth_ini_ = os.path.abspath(_rpth_ini_)
 
         conf = configparser.ConfigParser()
-        conf.read(_pth_ini_, encoding="utf-8")
+        conf.read(_pth_ini_, encoding="utf-8-sig")   # todo: testing the ability
         d = conf._sections
+        # print(d, _pth_ini_)
 
         # 3. 生成输入文件目录
         os.chdir(dct_ini['_dir_run_py_'])
         dct_ini['_dir_afbase_'] = os.path.abspath(d['dir_input']['_dir_afbase_'])
         dct_ini['_dir_afb_rjzx_'] = os.path.abspath(d['dir_input']['_dir_afb_rjzx_'])
-        dct_ini['_dir_afb_kyzx_'] = os.path.abspath(d['dir_input']['_dir_afb_kyzx_'])
+        dct_ini['_dir_afb_kyzx_t_'] = os.path.abspath(d['dir_input']['_dir_afb_kyzx_t_'])
+        dct_ini['_dir_afb_kyzx_u_'] = os.path.abspath(d['dir_input']['_dir_afb_kyzx_u_'])
+        dct_ini['_dir_afb_hlge_'] = os.path.abspath(d['dir_input']['_dir_afb_hlge_'])
         dct_ini['_dir_eml_'] = os.path.abspath(d['dir_input']['_dir_eml_'])
+        dct_ini['_dir_init_py_'] = os.path.dirname(os.path.realpath(__file__))
 
         # 4. 生成输出文件目录
         os.chdir(dct_ini['_dir_run_py_'])
         dct_ini['_hd_dir_out_'] = os.path.basename(d['dir_output']['_out_rpth_hd_'])
         dct_ini['_dir_out_'] = os.path.abspath(
             d['dir_output']['_out_rpth_hd_'] + time.strftime('%Y%m%d_%H%M%S', time.localtime()))
-        print(dct_ini['_dir_out_'])
+        # print(dct_ini['_dir_out_'])
 
+        os.chdir(dct_ini['_dir_run_py_'])
         return dct_ini
 
     # 路径
@@ -174,4 +182,7 @@ class Toolman():
                     break
 
         # 3. 写入新的表头内容
-        t1.paragraphs[lst_[0]].runs[lst_[1]].text = _txt
+        t1.paragraphs[lst_[0]].runs[lst_[1]].text = _txt\
+
+    # todo: 解压工具
+
