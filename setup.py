@@ -1,14 +1,16 @@
+import time
 from setuptools import setup, find_packages
 
 
 
-# import time
-# print('今天是本年第几周？ ', time.strftime("%W"))
+import time
+print('今天是本年第几周？ ', time.strftime("%W"))
+# time.sleep(10)
 
 
 
 
-GFICLEE_VERSION = '23.45.0'
+GFICLEE_VERSION = '23.47.0'
 
 setup(
     name='kiwigo',
