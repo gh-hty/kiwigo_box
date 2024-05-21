@@ -10,10 +10,10 @@ print('今天是本年第几周？ ', time.strftime("%W"))
 
 
 
-GFICLEE_VERSION = '23.47.0'
+GFICLEE_VERSION = '24.21.0'
 
 setup(
-    name='kiwigo',
+    name='kiwigo2',
     version=GFICLEE_VERSION,
     packages=find_packages(),
     include_package_data=True,

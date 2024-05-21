@@ -1,0 +1,11 @@
+README.md
+setup.py
+kiwigo/__init__.py
+kiwigo/easter_egg.py
+kiwigo/self_funs.py
+kiwigo/tooler_eml.py
+kiwigo/toolman.py
+kiwigo2.egg-info/PKG-INFO
+kiwigo2.egg-info/SOURCES.txt
+kiwigo2.egg-info/dependency_links.txt
+kiwigo2.egg-info/top_level.txt

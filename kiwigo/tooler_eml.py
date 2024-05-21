@@ -26,6 +26,11 @@ v23.46.0 更新内容：
    - 增加了授权文件按自然排序分配id（即《授权单10.docx》在《授权单6.docx》之后分配编号）
    - 增加了剪切到工作目录并解压筛选功能（【提示】使用本程序解压.rar文件前，需先在环境变量中添加winrar.exe所在根目录，并重启pycharm）
    - 修复了一些bug（如复制发布时同邮件授权单号不按顺序拍）
+v24.0000
+   - 增加.eml归档功能（以授权单命名）
+v24.21.0
+   - kgo.emls_to_doxs()方法新增参数sender_mode='forward'/'origin'，'forward'模式下可识别申请人过指定人转发来的邮件，并视申请人为发件人
+   - 放宽机房名过滤要求
 
 todo:
    - 增加.xlsx文件全面记录信息
@@ -35,6 +40,10 @@ todo:
    - 系统解决.bat转义字符（如&等）
    - fix_sqd()无法识别.~前缀的.docx文件
    - 增加log
+   - 归档文件命名修复（如A7-405无法识别）
+   - 增减单号
+   - 自动除空格
+   - 尽可能正确识别各种形式日期，规范化
 
 questions:
    - fitz.open()报黄
@@ -90,7 +99,7 @@ _path_xlsx_ = os.path.join(_path_, 'a.xlsx')
 _lst_kyzx_t_ = ['A3-302', 'A3-305', 'A3-402', 'A3-405', 'A7-405', 'A7-406']
 _lst_kyzx_u_ = ['DC1-201', 'DC1-202', 'DC1-301', 'DC2-203', 'DC2-401', ]
 _lst_rjzx_ = ['A3-303']
-_lst_hlge_ = ['B1-3A', 'B1-3C', 'B1-3D', 'B1-2D', 'B3-2B', 'B3-2D', 'B3-3A', 'B3-3D']
+_lst_hlge_ = ['B1-1A','B1-1B','B1-2A','B1-2B','B1-2C','B1-2D','B1-3A','B1-3B','B1-3C','B1-3D','B3-1A','B3-1B','B3-2A','B3-2B','B3-2C','B3-2D','B3-3A','B3-3B','B3-3C','B3-3D']
 
 _dct_pak_rom = {
     '电信': _lst_kyzx_t_,
@@ -291,19 +300,22 @@ class Sq:
             dict_docx[_id]['进出时间'] = self.tm.fun_get_run_text(t1=t0.cell(8, 1)) + \
                                      ' ~ ' + self.tm.fun_get_run_text(t1=t0.cell(8, 6))
             dict_docx[_id]['wkdate'] = self.tm.fun_get_run_text(t1=t0.cell(8, 1))
-            dict_docx[_id]['room'] = self.tm.fun_get_run_text(t1=t_in.cell(1, 2))
-            # 若此处报错无['sbj_aid']或因未识别成功机房引起
+
+            _room = self.tm.fun_get_run_text(t1=t_in.cell(1, 2))
+            _room = tm.rm_sig(_in=_room, _rm=' ', del_blk=True)  # delete the blank str
+            dict_docx[_id]['room'] = self._identify_room(_r_str=_room)
+            # todo: 方法加入mode::easy\hard
+            # todo: 后续增加功能，将正确机房写入授权单中
+
             try:
                 dict_docx[_id]['af_zone'] = \
-                [ki for ki in _dct_pak_rom.keys() if dict_docx[_id]['room'] in _dct_pak_rom[ki]][0]
+                    [ki for ki in _dct_pak_rom.keys() if dict_docx[_id]['room'] in _dct_pak_rom[ki]][0]
             except:
-                print(Fore.WHITE + Back.BLACK + Style.DIM + '[error] ' + os.path.join(dir_eml_atm, dict_docx[_id]['af_name'])
-                      + ' 或因未识别成功机房\t未找到读取到的机房：' + dict_docx[_id]['room'] + Style.RESET_ALL)
+                print(Fore.WHITE + Back.BLACK + Style.DIM + '[error] ' + os.path.join(dir_eml_atm,
+                                                                                      dict_docx[_id]['af_name'])
+                      + ' 或因未识别成功机房\t未找到读取到的机房：' + _room + Style.RESET_ALL)
                 self.dict_log['er_eml'].append(dir_eml)
                 dict_docx[-1] = {}
-                # exit()
-
-            # dict_docx['准入单编号'] = auth_id  # todo: 如果有的话
 
             if self.tm.fun_get_run_text(t1=t_in.cell(0, 1)):
                 # print('入场')
@@ -357,6 +369,23 @@ class Sq:
             shutil.copyfile(src=os.path.join(dir_eml_atm, af_i), dst=os.path.join(_dir_docx_, eml_idf + af_i))
 
         return dict_docx
+
+    # 识别机房
+    def _identify_room(self, _r_str):
+        # 若此处报错无['sbj_aid']或因未识别成功机房引起
+        # ↓此法仅严格识别
+        # dict_docx[_id]['af_zone'] = \
+        # [ki for ki in _dct_pak_rom.keys() if dict_docx[_id]['room'] in _dct_pak_rom[ki]][0]
+        '''放宽机房识别条件'''
+        for k in _dct_pak_rom.keys():
+            for _r in _dct_pak_rom[k]:
+                if _r_str == _r:
+                    return _r
+                elif re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5\s]+', '', _r_str).upper() \
+                        == re.sub(r'[^a-zA-Z0-9\u4e00-\u9fa5\s]+', '', _r).upper().upper():
+                    print('[提示] 授权单机房可能填写不规范（已由' + _r_str + '模糊识别为' + _r + '，可忽略）')
+                    return _r
+        return -1
 
     def _sqd_png(self, _from_dx, _to_dir):
         _fm_dir, _fm_dx = os.path.split(_from_dx)
@@ -536,6 +565,8 @@ class Sq:
 
     def _name_sqd(self, dict_syn):
         for d_key in dict_syn.keys():
+            dict_syn[d_key]['wkdate'] \
+                = tm.rm_sig(_in=dict_syn[d_key]['wkdate'], _rm=' ', del_blk=True)   # delete the blank str
             set_bad = set()
             # 1. 识别施工日期
             # todo: 有没有更简洁的替代方法
@@ -644,6 +675,30 @@ class Sq:
             d_tmp1 = self.dict_log['ea'][idf]['bulet']
             self.dict_log['ea'][idf]['bulets'] = '; \r\n'.join([': '.join((k, d_tmp1[k])) for k in sorted(d_tmp1.keys())])
 
+            # [temp code] rename
+            a1, a2 = os.path.split(self.dict_log['ea'][idf][0]['pth_eml'])
+            _, c2 = os.path.splitext(a2)
+
+            # print('s', self.dict_log['ea'][idf]['bulets'] + c2)
+            # pprint.pprint(self.dict_log['ea'][idf])
+            # print(os.path.join(r'C:\Users\7546671\Desktop\kiwigo_table\2_这个文件夹放【下载的邮件(.eml)】\机房邮件归档', self.dict_log['ea'][idf]['bulets'] + c2))
+
+            f_n = self.dict_log['ea'][idf]['bulets']
+
+            for _i in ['echo', ' |clip', ':']:
+                while True:
+                    if _i in f_n:
+                        f_n = f_n.replace(_i, '')
+                    else:
+                        break
+
+            # 机房邮件归档 （后续统一新建并识别目录）
+            _dir_used_emls_ = os.path.join(_dir_eml_, '机房邮件归档')
+            if not os.path.exists(_dir_used_emls_):
+                os.makedirs(_dir_used_emls_)
+            shutil.copyfile(src=self.dict_log['ea'][idf][0]['pth_eml'],
+                            dst=os.path.join(_dir_used_emls_, f_n + c2))
+
     def _del_org_docx(self, dict_syn):
         for ki in dict_syn.keys():
             os.remove(os.path.join(dict_syn[ki]['dir_attach'], dict_syn[ki]['af_name'] + '.docx'))
@@ -651,7 +706,7 @@ class Sq:
             shutil.copyfile(src=os.path.join(_dir_docx_, dict_syn[ki]['name_nw'] + '.docx'),
                             dst=os.path.join(dict_syn[ki]['dir_attach'], '#' + dict_syn[ki]['name_nw'] + '.docx'))
 
-    def emls_to_doxs(self, _dct_ini_=_dct_ini_):
+    def emls_to_doxs(self, _dct_ini_=_dct_ini_, sender_mode='origin'):
         _pth_doxs_arc = _dct_ini_['_dir_afbase_']
         _pth_eml = _dct_ini_['_dir_eml_']
         pth_out = _dct_ini_['_dir_out_']
@@ -676,13 +731,23 @@ class Sq:
                     raw_email = fhdl.read()
                 ep = eml_parser.EmlParser(include_attachment_data=True, include_raw_body=True)
                 parsed_eml = ep.decode_email_bytes(raw_email)
+
                 dict_eml['sbj'] = parsed_eml['header']['subject']
                 dict_eml['pth_eml'] = os.path.join(_pth_eml, eml_i)
                 # pprint.pprint(parsed_eml['header'])
 
                 # 3. 保存信息
                 eml_hd = parsed_eml['header']
+                # 3.1 可选识别发件人（因申请人需转发leader后方可入授权邮箱，故需识别转发前的申请人）
                 sender_ = ''.join([i.split(' <', 1)[0] for i in set(eml_hd['header']['from'])])
+                if sender_mode == 'origin':
+                    pass
+                elif sender_mode == 'forward':
+                    _m = parsed_eml['body'][0]['content']
+                    sender_ = self.identify_sender(_mail_str=_m, )
+                else:
+                    print('[err] sender_mode should be "origin" or "forward", now, sender_mode = origin')
+
                 date_ = datetime.datetime.strftime(eml_hd['date'], '%Y%m%d%H%M%S')
                 eml_idf = date_ + '_' + sender_
                 print(eml_idf + '\t' + dict_eml['sbj'])    # 打印正在处理哪封邮件
@@ -937,4 +1002,28 @@ class Sq:
                 row_i += 1
         df0.to_excel(os.path.join(_out_path_, 'res.xlsx'), index=None)
 
+    '''可识别转发邮件发件人 （最新转发关系中，如收件人为王鹏，则发件人定为申请人） 输入为邮件正文str'''
+    @classmethod
+    def identify_sender(cls, _mail_str, _last_receiver='王鹏', unknow_name='~'):
+        if (type(_last_receiver).__name__ == 'str'):
+            lst_last_receiver = [_last_receiver]
 
+        # 1. 提取[转发标识有效段落] flag
+        lst_flag = re.compile('----邮件原文----.+?主题：', flags=re.S).findall(_mail_str)
+
+        # 2 若receiver为王鹏 & sender不为王鹏；则sender为初始sender
+        '''方法点'''
+        # ↓ 此办法无法识别有多位收件人，或王鹏非第一位收件人的情况
+        # _receiver = re.compile('收件人："(.+)"', re.M).findall(flg_sender[0])[0]
+        _sender = unknow_name   # 若出错（识别失败），默认名
+        try:
+            for _flag in lst_flag:
+                for _last_rcver in lst_last_receiver:
+                    if _last_rcver in re.compile('收件人："(.+)"', re.M).findall(_flag):  # 有人发给[例：王鹏]的情况
+                        _sender = re.compile('发件人："(.+)"', re.M).findall(_flag)[0]
+                        return _sender   # case1: 识别成功，直接退出
+            print('[err] case2 发件人未识别到，已置为', unknow_name)   # case2: lst_flag为空[]时运行
+        except:
+            print('[err] case3 发件人未识别到，已置为', unknow_name)   # case3: try中有任何报错时
+
+        return _sender
